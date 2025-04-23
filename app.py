@@ -184,7 +184,7 @@ def authorize():
     flow = Flow.from_client_secrets_file(
         CREDENTIALS_FILE,
         scopes=SCOPES,
-        redirect_uri='http://localhost:5000/oauth2callback'
+        redirect_uri='http://127.0.0.1:5000/oauth2callback'
     )
     auth_url, _ = flow.authorization_url(prompt='consent')
     return redirect(auth_url)
@@ -195,7 +195,7 @@ def oauth2callback():
     flow = Flow.from_client_secrets_file(
         CREDENTIALS_FILE,
         scopes=SCOPES,
-        redirect_uri='http://localhost:5000/oauth2callback'
+        redirect_uri='http://127.0.0.1:5000/oauth2callback'
     )
     flow.fetch_token(authorization_response=request.url)
     credentials = flow.credentials
