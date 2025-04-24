@@ -4,16 +4,39 @@
     <meta charset="UTF-8">
     <title>NeuroScheduler</title>
     {{ bootstrap.load_css() }}
+    <style>
+        body {
+            background-image: url('/static/Cover.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .logo {
+            position: absolute;
+            top: 20px;
+            left: 100px;
+            max-height: 200px; 
+            z-index: 1000; 
+        }
+     
+    </style>
 </head>
 <body class="bg-light">
+    <img src="/static/LogoBG.png" alt="NeuroScheduler Logo" class="logo">
     <div class="container py-5">
-        <h1 class="text-center mb-4">NeuroScheduler</h1>
-
-        <div id="chat-box" class="border rounded p-3 mb-3 bg-white" style="height: 300px; overflow-y: auto;" role="log" aria-live="polite" aria-atomic="false"></div>
+        <div class="text-center mb-4">
+        <img src="/static/Banner.png" width="1000">
+        </div>
+        <!--<h1 class="text-center mb-4">NeuroScheduler</h1> -->
+        <br>
+        <br>
+        <br>
+        <div id="chat-box" class="border rounded p-3 mb-3 bg-white" style="height: 300px; overflow-y: auto; border: 3px solid #4e73df;" role="log" aria-live="polite" aria-atomic="false"></div>
 
         <form id="task-form" class="d-flex">
             <label for="task-input" class="visually-hidden">Describe your task</label>
-            <input type="text" id="task-input" class="form-control me-2" placeholder="What do you want to schedule?" required>
+            <input type="text" id="task-input" class="form-control me-2" style="border-color: #4e73df; background-color: #fff;" placeholder="What do you want to schedule?" required>
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
     </div>
