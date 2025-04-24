@@ -158,7 +158,7 @@ def chat():
             try:
                 link = add_to_my_calendar(**args)
                 return jsonify({
-                    "response": f"✅ Event added to your calendar. [View it here]({link})",
+                    "response": f" Event added to your calendar. [View it here]({link})",
                     "structured": args
                 })
             except:
@@ -187,21 +187,34 @@ def authorize():
         redirect_uri='http://127.0.0.1:5000/oauth2callback'
     )
     auth_url, _ = flow.authorization_url(prompt='consent')
+    print("🔗 Google Auth URL:", auth_url)
     return redirect(auth_url)
 
 
 @app.route('/oauth2callback')
 def oauth2callback():
-    flow = Flow.from_client_secrets_file(
-        CREDENTIALS_FILE,
-        scopes=SCOPES,
-        redirect_uri='http://127.0.0.1:5000/oauth2callback'
-    )
-    flow.fetch_token(authorization_response=request.url)
-    credentials = flow.credentials
-    with open(TOKEN_PICKLE, 'wb') as token:
-        pickle.dump(credentials, token)
-    return redirect(url_for("index"))
+    print(" Hit /oauth2callback route")
+    try:
+        flow = Flow.from_client_secrets_file(
+            CREDENTIALS_FILE,
+            scopes=SCOPES,
+            redirect_uri='http://127.0.0.1:5000/oauth2callback'
+        )
+        print(" Created OAuth flow object")
+
+        flow.fetch_token(authorization_response=request.url)
+        print("🔐 Token fetched successfully")
+
+        credentials = flow.credentials
+        with open(TOKEN_PICKLE, 'wb') as token:
+            pickle.dump(credentials, token)
+        print(" Token saved to token.pickle")
+
+        return redirect(url_for('index'))
+
+    except Exception as e:
+        print(" ERROR during OAuth callback:", e)
+        return f"<h2>Something went wrong during login</h2><pre>{e}</pre>"
 
 
 @app.route('/logout')
