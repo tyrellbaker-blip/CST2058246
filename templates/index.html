@@ -23,15 +23,15 @@
     </style>
 </head>
 <body class="bg-light">
-    <img src="/static/LogoBG.png" alt="NeuroScheduler Logo" class="logo">
+    <img id="logoBG-img" src="/static/LogoBG.png" alt="NeuroScheduler Logo" class="logo">
     <div class="container py-5">
         <div class="text-center mb-4">
-        <img src="/static/Banner.png" width="1000">
+        <img id="banner-img" src="/static/Banner.png" width="1000">
+        </div>
+        <div class="text-center mb-4">
+            <button id="dark-mode" class="btn btn-secondary">🌙 Dark Mode</button>
         </div>
         <!--<h1 class="text-center mb-4">NeuroScheduler</h1> -->
-        <br>
-        <br>
-        <br>
         <div id="chat-box" class="border rounded p-3 mb-3 bg-white" style="height: 300px; overflow-y: auto; border: 3px solid #4e73df;" role="log" aria-live="polite" aria-atomic="false"></div>
 
         <form id="task-form" class="d-flex">
