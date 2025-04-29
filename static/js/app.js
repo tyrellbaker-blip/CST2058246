@@ -86,3 +86,26 @@ function hideTypingIndicator() {
         indicator.parentElement.remove();
     }
 }
+
+// --- Dark Mode ---
+let darkMode = false;
+document.getElementById("dark-mode").addEventListener("click", function () {
+    darkMode = !darkMode;
+
+    const logoImg = document.getElementById("logoBG-img");
+    const bannerImg = document.getElementById("banner-img");
+
+    if (darkMode) {
+        logoImg.src = "/static/LogoBG-dark.png";
+        bannerImg.src = "/static/Banner-dark.png";
+        document.body.style.backgroundImage = "url('/static/Cover-dark.jpeg')";
+        document.body.classList.add("dark-mode");
+        this.textContent = "🔆 Light Mode";
+    } else {
+        logoImg.src = "/static/LogoBG.png";
+        bannerImg.src = "/static/Banner.png";
+        document.body.style.backgroundImage = "url('/static/Cover.jpeg')";
+        document.body.classList.remove("dark-mode");
+        this.textContent = "🌙 Dark Mode";
+    }
+});

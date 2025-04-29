@@ -1,0 +1,6 @@
+.env
+credentials.json
+token.picle
+token.pickle
+.DS_Store
+static/.DS_Store
