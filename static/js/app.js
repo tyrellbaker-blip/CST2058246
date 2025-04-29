@@ -3,29 +3,35 @@ document.getElementById("task-form").addEventListener("submit", function(e) {
     const input = document.getElementById("task-input");
     const message = input.value.trim();
 
-    if (message)
-    {
+    if (message) {
         addMessage("user", message);
         input.value = "";
         showTypingIndicator();
 
-        fetch("/chat",{
+        fetch("/chat", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({message: message})
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: message })
         })
-            .then(res=> res.json())
-            .then(data=> {
-                hideTypingIndicator();
-                addMessage("bot", data.response);
-            })
-            .catch(err=> {
-                hideTypingIndicator();
-                addMessage("bot", "Sorry about that, something went wrong. Give it another go.");
-                console.error(err);
-            })
+        .then(res => res.json())
+        .then(data => {
+            hideTypingIndicator();
+
+            if (data.response === "conflict") {
+                alert(data.message);
+            } else if (data.response === "success") {
+                addMessage("bot", data.message);
+            } else if (data.response === "followup") {
+                addMessage("bot", data.message);
+            } else {  // Handles "error" or unexpected responses
+                alert(data.message || "Sorry, something went wrong. Try again!");
+            }
+        })
+        .catch(err => {
+            hideTypingIndicator();
+            addMessage("bot", "Sorry about that, something went wrong. Give it another go.");
+            console.error(err);
+        });
     }
 });
 
