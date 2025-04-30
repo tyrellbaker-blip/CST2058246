@@ -6,6 +6,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_bootstrap import Bootstrap5
 from dotenv import load_dotenv
+from googleapiclient.discovery import build
 from openai import OpenAI
 from google_auth_oauthlib.flow import Flow
 
@@ -63,7 +64,12 @@ schedule_event_tool = {
 @app.route('/')
 @login_required
 def index():
-    return render_template('index.html')
+    with open(TOKEN_PICKLE, 'rb') as token:
+        credentials = pickle.load(token)
+    user_info_service = build('oauth2', 'v2', credentials=credentials)
+    user_info = user_info_service.userinfo().get().execute()
+    user_email = user_info.get("email")
+    return render_template('index.html', calendar_id=user_email)
 
 
 @app.route('/chat', methods=['POST'])
@@ -159,7 +165,7 @@ def authorize():
     flow = Flow.from_client_secrets_file(
         CREDENTIALS_FILE,
         scopes=SCOPES,
-        redirect_uri='http://localhost:5000/oauth2callback'
+        redirect_uri='http://127.0.0.1:5000/oauth2callback'
     )
     auth_url, _ = flow.authorization_url(prompt='consent')
     return redirect(auth_url)
@@ -170,7 +176,7 @@ def oauth2callback():
     flow = Flow.from_client_secrets_file(
         CREDENTIALS_FILE,
         scopes=SCOPES,
-        redirect_uri='http://localhost:5000/oauth2callback'
+        redirect_uri='http://127.0.0.1:5000/oauth2callback'
     )
     flow.fetch_token(authorization_response=request.url)
     credentials = flow.credentials
@@ -185,6 +191,36 @@ def logout():
         os.remove(TOKEN_PICKLE)
     return redirect(url_for("authorize"))
 
+@app.route('/events')
+@login_required
+def get_events():
+    try:
+        with open(TOKEN_PICKLE, 'rb') as token:
+            credentials = pickle.load(token)
+        service = build('calendar', 'v3', credentials=credentials)
 
+        now = datetime.utcnow().isoformat() + 'Z'
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=now,
+            maxResults=50,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+        events = events_result.get('items', [])
+
+        formatted_events = []
+        for event in events:
+            formatted_events.append({
+                "title": event.get("summary"),
+                "start": event["start"].get("dateTime", event["start"].get("date")),
+                "end": event["end"].get("dateTime", event["end"].get("date"))
+            })
+
+        return jsonify(formatted_events)
+
+    except Exception as e:
+        print(f"Error fetching events: {e}")
+        return jsonify([])
 if __name__ == '__main__':
     app.run(debug=True)

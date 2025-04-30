@@ -86,3 +86,30 @@ function hideTypingIndicator() {
         indicator.parentElement.remove();
     }
 }
+// --- FullCalendar Initialization ---
+document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 600,
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: '/events', // <-- pulls from your Flask route
+        eventClick: function(info) {
+            const event = info.event;
+            if (event.url) {
+                window.open(event.url, "_blank");
+                info.jsEvent.preventDefault();
+            } else {
+                alert(`📅 ${event.title}\nFrom: ${event.start}\nTo: ${event.end}`);
+            }
+        }
+    });
+
+    calendar.render();
+});
