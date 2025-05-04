@@ -17,19 +17,23 @@ document.getElementById("task-form").addEventListener("submit", function(e) {
         .then(data => {
             hideTypingIndicator();
 
-            if (data.response === "conflict") {
-                alert(data.message);
-            } else if (data.response === "success") {
-                addMessage("bot", data.message);
+            if (data.response === "success") {
+                playSuccessAudio();
+                addMessage("bot", data.message || "✅ Scheduled!");
+            } else if (data.response === "conflict" || data.response === "error") {
+                playFailureAudio();
+                addMessage("bot", data.message || "❌ Something went wrong.");
             } else if (data.response === "followup") {
-                addMessage("bot", data.message);
-            } else {  // Handles "error" or unexpected responses
-                alert(data.message || "Sorry, something went wrong. Try again!");
+                addMessage("bot", data.message || "🤖 Can you tell me more?");
+            } else {
+                addMessage("bot", "⚠️ Unexpected response. Want to try again?");
             }
+            input.focus();
         })
         .catch(err => {
             hideTypingIndicator();
-            addMessage("bot", "Sorry about that, something went wrong. Give it another go.");
+            playFailureAudio();
+            addMessage("bot", "🚫 Network issue or server error. Please try again later.");
             console.error(err);
         });
     }
@@ -52,6 +56,16 @@ function addMessage(sender, text) {
     messageWrapper.appendChild(bubble);
     chatBox.appendChild(messageWrapper);
     chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function playSuccessAudio() {
+    const audio = new Audio("/static/success.wav");
+    audio.play().catch(err => console.error("Audio error:", err));
+}
+
+function playFailureAudio() {
+    const audio = new Audio("/static/failure.wav");
+    audio.play().catch(err => console.error("Audio error:", err));
 }
 
 // --- Typing indicator ---
@@ -86,6 +100,7 @@ function hideTypingIndicator() {
         indicator.parentElement.remove();
     }
 }
+
 // --- FullCalendar Initialization ---
 document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
@@ -99,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-        events: '/events', // <-- pulls from your Flask route
+        events: '/events',
         eventClick: function(info) {
             const event = info.event;
             if (event.url) {
