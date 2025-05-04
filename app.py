@@ -17,7 +17,7 @@ from helpers import (
     resolve_relative_date,
     has_calendar_conflict,
     delete_event,
-    find_event_id  # ← required for delete_event GPT call
+    find_event_id
 )
 
 # --- App & Bootstrap ---
@@ -82,6 +82,9 @@ delete_event_tool = {
 @app.route('/')
 @login_required
 def index():
+    """
+    Render the main application page after login.
+    """
     with open(TOKEN_PICKLE, 'rb') as token:
         credentials = pickle.load(token)
     user_info_service = build('oauth2', 'v2', credentials=credentials)
@@ -93,6 +96,10 @@ def index():
 @app.route('/chat', methods=['POST'])
 @login_required
 def chat():
+    """
+    Handle incoming chat messages. Use OpenAI to interpret user intent and either
+    schedule or delete events on their Google Calendar.
+    """
     data = request.json
     user_input = data.get("message")
     if not user_input:
@@ -107,8 +114,7 @@ def chat():
             messages=[
                 {"role": "system", "content": (
                     "You are a helpful, informal scheduling assistant. Respond to scheduling requests naturally. "
-                    f"Today is {today_info}. Use this to interpret dates given to you without a specific date. For "
-                    f"example, if the user says 'next Tuesday', you should know that today is {today_info}."
+                    f"Today is {today_info}. Use this to interpret dates given to you without a specific date. "
                     "If you have enough information, call the appropriate function like `schedule_event` or `delete_event`. "
                     "Otherwise, ask follow-up questions. Not every answer needs to schedule something — you can help the user clarify."
                 )},
@@ -131,14 +137,12 @@ def chat():
                     start_time=args["start_time"],
                     end_time=args["end_time"]
                 )
-
                 if conflict_exists:
                     return jsonify({
                         "response": "conflict",
                         "message": "⚠️ You already have something scheduled at this time. Please choose another slot.",
                         "structured": args
                     })
-
                 try:
                     link = add_to_my_calendar(**args)
                     return jsonify({
@@ -190,6 +194,9 @@ def chat():
 
 @app.route('/authorize')
 def authorize():
+    """
+    Start the OAuth 2.0 authorization flow with Google.
+    """
     flow = Flow.from_client_secrets_file(
         CREDENTIALS_FILE,
         scopes=SCOPES,
@@ -201,6 +208,9 @@ def authorize():
 
 @app.route('/oauth2callback')
 def oauth2callback():
+    """
+    Handle the OAuth callback and save the user's credentials.
+    """
     flow = Flow.from_client_secrets_file(
         CREDENTIALS_FILE,
         scopes=SCOPES,
@@ -215,6 +225,9 @@ def oauth2callback():
 
 @app.route('/logout')
 def logout():
+    """
+    Clear saved OAuth credentials and redirect to re-authenticate.
+    """
     if os.path.exists(TOKEN_PICKLE):
         os.remove(TOKEN_PICKLE)
     return redirect(url_for("authorize"))
@@ -223,6 +236,9 @@ def logout():
 @app.route('/events')
 @login_required
 def get_events():
+    """
+    Fetch upcoming calendar events from the user's Google Calendar.
+    """
     try:
         with open(TOKEN_PICKLE, 'rb') as token:
             credentials = pickle.load(token)
@@ -257,6 +273,9 @@ def get_events():
 @app.route('/delete-event', methods=['POST'])
 @login_required
 def delete_event_route():
+    """
+    Delete a specific event from the user's calendar using the provided event ID.
+    """
     data = request.json
     event_id = data.get("event_id")
     if not event_id:

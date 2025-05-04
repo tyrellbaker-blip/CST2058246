@@ -34,6 +34,11 @@
 </head>
 <body class="bg-light">
     <img src="/static/LogoBG.png" alt="NeuroScheduler Logo" class="logo">
+
+    <div style="position: absolute; top: 20px; right: 40px; z-index: 1000;">
+        <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
+    </div>
+
     <div class="container py-5">
         <div class="text-center mb-4">
             <img src="/static/Banner.png" width="1000">
@@ -46,7 +51,6 @@
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
 
-        <!-- 🗓️ Dynamic Embedded Google Calendar -->
         <iframe src="https://calendar.google.com/calendar/embed?src={{ calendar_id }}&ctz=America%2FLos_Angeles"
                 style="border: 0" width="100%" height="600" frameborder="0" scrolling="no"></iframe>
     </div>
