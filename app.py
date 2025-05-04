@@ -15,7 +15,9 @@ from helpers import (
     login_required,
     add_to_my_calendar,
     resolve_relative_date,
-    has_calendar_conflict
+    has_calendar_conflict,
+    delete_event,
+    find_event_id  # ← required for delete_event GPT call
 )
 
 # --- App & Bootstrap ---
@@ -37,7 +39,7 @@ SCOPES = [
 CREDENTIALS_FILE = 'credentials.json'
 TOKEN_PICKLE = 'token.pickle'
 
-# --- GPT Action / Tool Definition ---
+# --- GPT Tool Definitions ---
 schedule_event_tool = {
     "type": "function",
     "function": {
@@ -55,6 +57,22 @@ schedule_event_tool = {
                 "recurrence": {"type": "string", "description": "RRULE for repeating events (optional)"}
             },
             "required": ["title", "date", "start_time", "end_time"]
+        }
+    }
+}
+
+delete_event_tool = {
+    "type": "function",
+    "function": {
+        "name": "delete_event",
+        "description": "Delete an existing calendar event at a specific date and time.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "date": {"type": "string", "description": "Date of the event in YYYY-MM-DD"},
+                "start_time": {"type": "string", "description": "Start time of the event in HH:MM (24h) format"}
+            },
+            "required": ["date", "start_time"]
         }
     }
 }
@@ -91,15 +109,12 @@ def chat():
                     "You are a helpful, informal scheduling assistant. Respond to scheduling requests naturally. "
                     f"Today is {today_info}. Use this to interpret dates given to you without a specific date. For "
                     f"example, if the user says 'next Tuesday', you should know that today is {today_info}."
-                    "If you have enough information, call the `schedule_event` function. Otherwise, ask the user "
-                    "follow-up questions. You are also allowed to have conversations with the user like 'what is the "
-                    "day?' or 'what time?' to either get more information or give more information to the user. Not "
-                    "every answer to every question the user asks needs to be scheduling something. You can certainly "
-                    "answer inquiries from the user so long as the inquiries are in service of scheduling something. "
+                    "If you have enough information, call the appropriate function like `schedule_event` or `delete_event`. "
+                    "Otherwise, ask follow-up questions. Not every answer needs to schedule something — you can help the user clarify."
                 )},
                 {"role": "user", "content": user_input}
             ],
-            tools=[schedule_event_tool],
+            tools=[schedule_event_tool, delete_event_tool],
             tool_choice="auto"
         )
 
@@ -108,43 +123,56 @@ def chat():
         if message.tool_calls:
             tool_call = message.tool_calls[0]
             args = json.loads(tool_call.function.arguments)
+            tool_name = tool_call.function.name
 
-            # Conflict checking directly here (no GPT involved in conflict response)
-            conflict_exists = has_calendar_conflict(
-                date=args["date"],
-                start_time=args["start_time"],
-                end_time=args["end_time"]
-            )
+            if tool_name == "schedule_event":
+                conflict_exists = has_calendar_conflict(
+                    date=args["date"],
+                    start_time=args["start_time"],
+                    end_time=args["end_time"]
+                )
 
-            if conflict_exists:
-                # Direct frontend notification of conflict
-                return jsonify({
-                    "response": "conflict",
-                    "message": "⚠️ You already have something scheduled at this time. Please choose another slot.",
-                    "structured": args
-                })
+                if conflict_exists:
+                    return jsonify({
+                        "response": "conflict",
+                        "message": "⚠️ You already have something scheduled at this time. Please choose another slot.",
+                        "structured": args
+                    })
 
-            # No conflict, add event
-            try:
-                link = add_to_my_calendar(**args)
-                return jsonify({
-                    "response": "success",
-                    "message": f"✅ Event added to your calendar. [View it here]({link})",
-                    "structured": args
-                })
-            except Exception as e:
-                print(f"Error scheduling event: {e}")
+                try:
+                    link = add_to_my_calendar(**args)
+                    return jsonify({
+                        "response": "success",
+                        "message": f"✅ Event added to your calendar. [View it here]({link})",
+                        "structured": args
+                    })
+                except Exception as e:
+                    print(f"Error scheduling event: {e}")
+                    return jsonify({
+                        "response": "error",
+                        "message": "Something went wrong when trying to schedule the event.",
+                        "structured": args
+                    })
+
+            elif tool_name == "delete_event":
+                event_id = find_event_id(args["date"], args["start_time"])
+                if event_id:
+                    result = delete_event(event_id)
+                    if result == "Deleted":
+                        return jsonify({
+                            "response": "success",
+                            "message": "🗑️ Event deleted successfully.",
+                            "structured": args
+                        })
                 return jsonify({
                     "response": "error",
-                    "message": "Something went wrong when trying to schedule the event.",
+                    "message": "⚠️ Could not find or delete the event.",
                     "structured": args
                 })
 
-        # 🧠 No tool call? Try resolving date from user input
         resolved_date, resolved_time = resolve_relative_date(user_input)
         structured = {"resolved_date": resolved_date, "resolved_time": resolved_time} if resolved_date else None
 
-        # Standard GPT-generated follow-up message
         return jsonify({
             "response": "followup",
             "message": message.content,
@@ -191,6 +219,7 @@ def logout():
         os.remove(TOKEN_PICKLE)
     return redirect(url_for("authorize"))
 
+
 @app.route('/events')
 @login_required
 def get_events():
@@ -212,6 +241,7 @@ def get_events():
         formatted_events = []
         for event in events:
             formatted_events.append({
+                "id": event.get("id"),
                 "title": event.get("summary"),
                 "start": event["start"].get("dateTime", event["start"].get("date")),
                 "end": event["end"].get("dateTime", event["end"].get("date"))
@@ -222,5 +252,22 @@ def get_events():
     except Exception as e:
         print(f"Error fetching events: {e}")
         return jsonify([])
+
+
+@app.route('/delete-event', methods=['POST'])
+@login_required
+def delete_event_route():
+    data = request.json
+    event_id = data.get("event_id")
+    if not event_id:
+        return jsonify({"status": "error", "message": "Missing event ID"})
+
+    result = delete_event(event_id)
+    if result == "Deleted":
+        return jsonify({"status": "success", "message": "Event deleted"})
+    else:
+        return jsonify({"status": "error", "message": "Failed to delete event"})
+
+
 if __name__ == '__main__':
     app.run(debug=True)

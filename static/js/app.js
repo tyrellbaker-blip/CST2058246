@@ -115,15 +115,40 @@ document.addEventListener('DOMContentLoaded', function () {
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
         events: '/events',
-        eventClick: function(info) {
-            const event = info.event;
-            if (event.url) {
-                window.open(event.url, "_blank");
-                info.jsEvent.preventDefault();
+eventClick: function(info) {
+    const event = info.event;
+
+    // Open the event link in a new tab if it exists
+    if (event.url) {
+        window.open(event.url, "_blank");
+        info.jsEvent.preventDefault();
+        return;
+    }
+
+    // Otherwise show a delete prompt
+    const confirmed = confirm(`📅 ${event.title}\nFrom: ${event.start}\nTo: ${event.end}\n\nDo you want to delete this event?`);
+
+    if (confirmed) {
+        fetch('/delete-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event_id: event.id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert("🗑️ Event deleted.");
+                event.remove();
             } else {
-                alert(`📅 ${event.title}\nFrom: ${event.start}\nTo: ${event.end}`);
+                alert("⚠️ Failed to delete event.");
             }
-        }
+        })
+        .catch(err => {
+            alert("🚫 Network error.");
+            console.error(err);
+        });
+    }
+}
     });
 
     calendar.render();
