@@ -89,3 +89,51 @@ def add_to_my_calendar(title, date, start_time, end_time, location=None, notes=N
     except Exception as e:
         print(f"Error adding event: {e}")
         return "Failed to add event to calendar"
+
+def delete_event(event_id):
+    if not os.path.exists(TOKEN_PICKLE):
+        return "Authorization required"
+
+    try:
+        with open(TOKEN_PICKLE, 'rb') as token:
+            credentials = pickle.load(token)
+        service = build('calendar', 'v3', credentials=credentials)
+        service.events().delete(calendarId='primary', eventId=event_id).execute()
+        return "Deleted"
+    except Exception as e:
+        print(f"Error deleting event: {e}")
+        return "Failed"
+
+def find_event_id(date, start_time):
+    """
+    Locate the Google Calendar event ID for a given date and start time.
+    Returns the event ID if found, otherwise None.
+    """
+    try:
+        with open(TOKEN_PICKLE, 'rb') as token:
+            credentials = pickle.load(token)
+
+        service = build('calendar', 'v3', credentials=credentials)
+
+        # Create a 1-minute window starting at the given time
+        start = f"{date}T{start_time}:00-07:00"
+        end = f"{date}T{start_time}:59-07:00"
+
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=start,
+            timeMax=end,
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+
+        events = events_result.get('items', [])
+
+        if events:
+            return events[0].get("id")
+
+        return None
+
+    except Exception as e:
+        print(f"Error finding event ID: {e}")
+        return None
