@@ -10,8 +10,15 @@ TOKEN_PICKLE = 'token.pickle'
 
 def resolve_relative_date(text, base_datetime=None):
     """
-    Takes a natural language time expression like 'next Friday at 2pm' and resolves it
-    into a concrete (YYYY-MM-DD, HH:MM) tuple using the current datetime.
+    Parses natural language date/time expressions like 'next Friday at 2pm'
+    and returns a tuple (YYYY-MM-DD, HH:MM). Returns (None, None) if parsing fails.
+
+    Args:
+        text (str): Natural language input.
+        base_datetime (datetime, optional): Base datetime to resolve from. Defaults to now.
+
+    Returns:
+        tuple: (resolved_date: str, resolved_time: str)
     """
     base = base_datetime or datetime.now()
     dt = parse_date(text, settings={'RELATIVE_BASE': base})
@@ -20,6 +27,15 @@ def resolve_relative_date(text, base_datetime=None):
     return None, None
 
 def login_required(f):
+    """
+    Decorator that redirects the user to the Google OAuth flow if they aren't authenticated.
+
+    Args:
+        f (function): The Flask view function being protected.
+
+    Returns:
+        function: Wrapped view function.
+    """
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not os.path.exists(TOKEN_PICKLE):
@@ -27,8 +43,18 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- Calendar Conflict Check ---
 def has_calendar_conflict(date, start_time, end_time):
+    """
+    Checks if the user has any events that overlap with the given time window.
+
+    Args:
+        date (str): The date in YYYY-MM-DD format.
+        start_time (str): Start time in HH:MM (24h) format.
+        end_time (str): End time in HH:MM (24h) format.
+
+    Returns:
+        bool: True if there is a conflict, False otherwise.
+    """
     if not os.path.exists(TOKEN_PICKLE):
         return False
     try:
@@ -37,7 +63,6 @@ def has_calendar_conflict(date, start_time, end_time):
 
         service = build('calendar', 'v3', credentials=credentials)
 
-        # Google API requires timezone-aware ISO format with Z or timezone offset
         start = f"{date}T{start_time}:00-07:00"
         end = f"{date}T{end_time}:00-07:00"
 
@@ -56,8 +81,22 @@ def has_calendar_conflict(date, start_time, end_time):
         print(f"Error checking conflicts: {e}")
         return False
 
-# --- Calendar Event Creation ---
 def add_to_my_calendar(title, date, start_time, end_time, location=None, notes=None, recurrence=None):
+    """
+    Creates a new event on the user's primary Google Calendar.
+
+    Args:
+        title (str): Event title.
+        date (str): Event date (YYYY-MM-DD).
+        start_time (str): Event start time (HH:MM, 24h).
+        end_time (str): Event end time (HH:MM, 24h).
+        location (str, optional): Location of the event.
+        notes (str, optional): Description/notes.
+        recurrence (str, optional): Recurrence rule (RRULE format).
+
+    Returns:
+        str: Link to the created event or error string.
+    """
     if not os.path.exists(TOKEN_PICKLE):
         return "Authorization required"
 
@@ -91,6 +130,15 @@ def add_to_my_calendar(title, date, start_time, end_time, location=None, notes=N
         return "Failed to add event to calendar"
 
 def delete_event(event_id):
+    """
+    Deletes a Google Calendar event by its event ID.
+
+    Args:
+        event_id (str): The unique identifier of the calendar event.
+
+    Returns:
+        str: "Deleted" on success, or error message on failure.
+    """
     if not os.path.exists(TOKEN_PICKLE):
         return "Authorization required"
 
@@ -106,8 +154,14 @@ def delete_event(event_id):
 
 def find_event_id(date, start_time):
     """
-    Locate the Google Calendar event ID for a given date and start time.
-    Returns the event ID if found, otherwise None.
+    Locates the first Google Calendar event ID starting at a specific date and time.
+
+    Args:
+        date (str): Date in YYYY-MM-DD format.
+        start_time (str): Time in HH:MM (24h) format.
+
+    Returns:
+        str or None: Event ID if found, else None.
     """
     try:
         with open(TOKEN_PICKLE, 'rb') as token:
@@ -115,7 +169,6 @@ def find_event_id(date, start_time):
 
         service = build('calendar', 'v3', credentials=credentials)
 
-        # Create a 1-minute window starting at the given time
         start = f"{date}T{start_time}:00-07:00"
         end = f"{date}T{start_time}:59-07:00"
 
