@@ -30,24 +30,50 @@
             border-radius: 12px;
             margin-top: 40px;
         }
+
+        #chat-box {
+            background-color: #ffffff;
+            color: #000000;
+            border: 3px solid #4e73df;
+        }
+
+        .dark-mode #task-input {
+            background-color: #2b2b2b;
+            color: #f0f0f0;
+            border-color: #555;
+        }
+
+        .dark-mode #chat-box {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            border-color: #4e73df;
+        }
+
+        .dark-mode #task-input::placeholder {
+            color: #aaa;
+        }
     </style>
 </head>
 <body class="bg-light">
-    <img src="/static/LogoBG.png" alt="NeuroScheduler Logo" class="logo">
+    <img id="logoBG-img" src="/static/LogoBG.png" alt="NeuroScheduler Logo" class="logo">
 
     <div style="position: absolute; top: 20px; right: 40px; z-index: 1000;">
         <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">Logout</a>
     </div>
 
+    <div style="position: absolute; top: 70px; right: 40px; z-index: 1000;">
+        <button id="dark-mode" class="btn btn-secondary">🌙 Dark Mode</button>
+    </div>
+
     <div class="container py-5">
         <div class="text-center mb-4">
-            <img src="/static/Banner.png" width="1000">
+            <img id="banner-img" src="/static/Banner.png" width="1000">
         </div>
-        <div id="chat-box" class="border rounded p-3 mb-3 bg-white" style="height: 300px; overflow-y: auto; border: 3px solid #4e73df;" role="log" aria-live="polite" aria-atomic="false"></div>
+        <div id="chat-box" class="border rounded p-3 mb-3" style="height: 300px; overflow-y: auto; border: 3px solid #4e73df;" role="log" aria-live="polite" aria-atomic="false"></div>
 
         <form id="task-form" class="d-flex">
             <label for="task-input" class="visually-hidden">Describe your task</label>
-            <input type="text" id="task-input" class="form-control me-2" style="border-color: #4e73df; background-color: #fff;" placeholder="What do you want to schedule?" required>
+            <input type="text" id="task-input" class="form-control me-2" style="border-color: #4e73df;" placeholder="What do you want to schedule?" required>
             <button type="submit" class="btn btn-primary">Submit</button>
         </form>
 
