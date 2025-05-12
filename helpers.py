@@ -1,3 +1,13 @@
+"""
+Course: CST 205
+Title: NeuroScheduler
+Abstract: This application is designed to help make task management an easier process. The idea is that a user can
+see their Google Calendar in real time, and schedule and deschedule events using natural language. The necessity
+comes from the fact that none of the authors particularly like using their phone's calendar feature for one reason or
+another, but we all have a lot of things to do and they need to be scheduled on our calendars. Enter the NeuroScheduler!
+Authors: Ty Baker, Emiliano Gomez-Salgado, Daniel Martinez, Tharindu Amarasinghage
+Date: 05/12/2025
+"""
 from dateparser import parse as parse_date
 from datetime import datetime
 from googleapiclient.discovery import build
