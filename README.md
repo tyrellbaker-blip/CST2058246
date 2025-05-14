@@ -33,4 +33,7 @@ is not necessary to specify the specific year as long as you provide the month a
 
 ## Addendum
 All necessary files have been zipped into the turned in version of the project. Unzipping the file should allow you 
-to run it from the same state that we have been with all the files we've been using with minimal setup. 
+to run it from the same state that we have been with all the files we've been using with minimal setup. Unzip the 
+file, navigate to the directory, activate the virtual environment, and run the project.(it has a venv included or you 
+can use your own. Using your own means you have to install the requirements, 
+using the venv inside should mean you don't have to.)
