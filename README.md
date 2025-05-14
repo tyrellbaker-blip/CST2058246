@@ -37,3 +37,18 @@ to run it from the same state that we have been with all the files we've been us
 file, navigate to the directory, activate the virtual environment, and run the project.(it has a venv included or you 
 can use your own. Using your own means you have to install the requirements, 
 using the venv inside should mean you don't have to.)
+
+
+### Github Link:
+https://github.com/tyrellbaker-blip/CST2058246
+
+### Trello Link:
+https://trello.com/invite/b/67fd867cb867fd48c503fc0e/ATTI80cdf017f924e715406638a0d802e04bBD5A917A/team-8246
+
+### Future Work:
+There is a lot that could be added to this moving forward. It'd be nice to see it turned into a mobile application 
+so that it could truly be portable. Additionally, having the application support multiple deletes or additions at 
+once would add a layer of both utility and complexity. It could also be expanded such that it could be embedded on a 
+desktop or laptop or even used as a google or firefox extension. The idea is that ultimately, the application has 
+utility across platforms and modalities so users can move away from having to use their calendars and toward just 
+being able to use natural language instead. 
